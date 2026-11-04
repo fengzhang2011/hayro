@@ -29,3 +29,6 @@ embed-cmaps = ["hayro-interpret/embed-cmaps"]
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+flate2 = { workspace = true }
