@@ -117,9 +117,21 @@ impl ShadingPattern {
 
 impl CacheKey for ShadingPattern {
     fn cache_key(&self) -> u128 {
+        // Only the linear part of the matrix: patterns are rebuilt per
+        // draw with the current CTM folded into `matrix`, and a tiled
+        // renderer's CTM carries the tile translation. Since encode()
+        // applies the linear part to the content and the translation via
+        // `base_transform`, the encoded value - and therefore a sound
+        // cache key - depends on the linear part alone.
+        let [a, b, c, d, _, _] = self.matrix.as_coeffs();
         hash128(&(
             self.shading.cache_key(),
-            self.matrix.cache_key(),
+            (
+                a.to_bits(),
+                b.to_bits(),
+                c.to_bits(),
+                d.to_bits(),
+            ),
             self.opacity.to_bits(),
         ))
     }

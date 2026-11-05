@@ -75,6 +75,9 @@ mod tiling;
 type OutlineCache = FxHashMap<(u128, u32), Option<Rc<BezPath>>>;
 
 pub(crate) struct GlobalState {
+    /// The document's shared object cache, for renderer-side caches
+    /// (shading encodes and sampled textures).
+    object_cache: hayro_interpret::Cache,
     level: Level,
     outline_cache: Rc<RefCell<OutlineCache>>,
     glyph_cache: Rc<RefCell<GlyphCache>>,
@@ -89,6 +92,7 @@ pub(crate) struct GlobalState {
 impl GlobalState {
     pub(crate) fn new(cache: &RenderCache<'_>, settings: &RenderSettings) -> Self {
         Self {
+            object_cache: cache.interpreter_cache.object_cache_handle(),
             level: Level::new(),
             outline_cache: cache.outline_cache.clone(),
             glyph_cache: cache.glyph_cache.clone(),

@@ -216,10 +216,20 @@ impl ShadingPattern {
                 triangles,
                 function,
             } => {
-                let full_transform = self.matrix;
+                // The samples are keyed by device-space pixel position, so
+                // sampling with the full matrix bakes the tile translation
+                // into the encoded content - which makes any cross-render
+                // cache of this value miss for every tile. Sample with the
+                // linear part only and carry the translation in
+                // `base_transform` (which `sample_texture` applies to the
+                // sampling grid); the resulting pixels are identical, and
+                // the encode no longer depends on where the render is
+                // clipped.
+                let [a, b, c, d, e, f] = self.matrix.as_coeffs();
+                let full_transform = Affine::new([a, b, c, d, 0.0, 0.0]);
                 let samples = sample_triangles(triangles, full_transform);
 
-                base_transform = Affine::IDENTITY;
+                base_transform = Affine::translate((-e, -f));
 
                 EncodedShadingType::Sampled(EncodedSampledShading {
                     samples: Arc::new(samples),
@@ -232,10 +242,13 @@ impl ShadingPattern {
                     patch.to_triangles(&mut triangles);
                 }
 
-                let full_transform = self.matrix;
+                // As with the triangle mesh: linear part only, translation
+                // via `base_transform`.
+                let [a, b, c, d, e, f] = self.matrix.as_coeffs();
+                let full_transform = Affine::new([a, b, c, d, 0.0, 0.0]);
                 let samples = sample_triangles(&triangles, full_transform);
 
-                base_transform = Affine::IDENTITY;
+                base_transform = Affine::translate((-e, -f));
 
                 EncodedShadingType::Sampled(EncodedSampledShading {
                     samples: Arc::new(samples),
